@@ -3,459 +3,412 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
   <title>Portal de Cliente | Ejecutiva Ambiental</title>
 
-  <style>
-    :root {
-      --verde: #005600;
-      --verde-claro: #007836;
-      --azul: #0B1F33;
-      --gris-fondo: #F4F6F5;
-      --gris-texto: #5F6B66;
-      --blanco: #FFFFFF;
-      --borde: #DDE5E1;
-      --alerta: #C9A227;
-      --exito: #1F8A4C;
-      --revision: #376996;
-    }
+  <!--
+    CABECERAS DE SEGURIDAD — configurar en el servidor web, NO solo aquí.
+    Si usas Netlify, Vercel o Apache, añade estas en la configuración del servidor:
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: Arial, Helvetica, sans-serif;
-    }
+    Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none';
+    X-Frame-Options: DENY
+    X-Content-Type-Options: nosniff
+    Referrer-Policy: strict-origin-when-cross-origin
+    Strict-Transport-Security: max-age=31536000; includeSubDomains (requiere HTTPS)
 
-    body {
-      background: var(--gris-fondo);
-      color: var(--azul);
-      min-height: 100vh;
-    }
+    Ver: /hosting-instructions.md para la guía completa.
+  -->
 
-    header {
-      background: linear-gradient(135deg, var(--verde), var(--verde-claro));
-      color: var(--blanco);
-      padding: 28px 20px;
-    }
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    .header-container {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
+  <!-- Estilos del portal -->
+  <link rel="stylesheet" href="css/styles.css" />
 
-    .brand {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 0.4px;
-    }
-
-    .subtitle {
-      margin-top: 8px;
-      font-size: 14px;
-      opacity: 0.9;
-    }
-
-    main {
-      max-width: 1100px;
-      margin: 28px auto;
-      padding: 0 20px;
-    }
-
-    .login-card,
-    .dashboard {
-      background: var(--blanco);
-      border: 1px solid var(--borde);
-      border-radius: 18px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-    }
-
-    .login-card {
-      max-width: 430px;
-      margin: 60px auto;
-      padding: 30px;
-    }
-
-    h1 {
-      font-size: 24px;
-      margin-bottom: 8px;
-    }
-
-    h2 {
-      font-size: 20px;
-      margin-bottom: 16px;
-    }
-
-    p {
-      color: var(--gris-texto);
-      line-height: 1.5;
-      font-size: 15px;
-    }
-
-    label {
-      display: block;
-      margin-top: 18px;
-      margin-bottom: 6px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    input {
-      width: 100%;
-      padding: 13px;
-      border-radius: 10px;
-      border: 1px solid var(--borde);
-      font-size: 15px;
-      outline: none;
-    }
-
-    input:focus {
-      border-color: var(--verde);
-    }
-
-    button {
-      margin-top: 22px;
-      width: 100%;
-      background: var(--verde);
-      color: var(--blanco);
-      border: none;
-      padding: 14px;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: var(--verde-claro);
-    }
-
-    .notice {
-      margin-top: 16px;
-      font-size: 13px;
-      color: var(--gris-texto);
-    }
-
-    .dashboard {
-      display: none;
-      padding: 26px;
-    }
-
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-
-    .client-info {
-      background: #F8FAF9;
-      border: 1px solid var(--borde);
-      border-radius: 14px;
-      padding: 18px;
-      margin-bottom: 24px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      margin-bottom: 28px;
-    }
-
-    .metric {
-      border: 1px solid var(--borde);
-      border-radius: 14px;
-      padding: 18px;
-      background: var(--blanco);
-    }
-
-    .metric strong {
-      display: block;
-      font-size: 26px;
-      color: var(--verde);
-      margin-bottom: 6px;
-    }
-
-    .table-wrapper {
-      overflow-x: auto;
-      border: 1px solid var(--borde);
-      border-radius: 14px;
-      margin-top: 16px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--blanco);
-      min-width: 720px;
-    }
-
-    th, td {
-      padding: 14px;
-      text-align: left;
-      border-bottom: 1px solid var(--borde);
-      font-size: 14px;
-    }
-
-    th {
-      background: #F8FAF9;
-      color: var(--azul);
-      font-weight: 700;
-    }
-
-    .status {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .status.programado {
-      background: #FFF5D6;
-      color: #8A6A00;
-    }
-
-    .status.revision {
-      background: #E8F1FA;
-      color: var(--revision);
-    }
-
-    .status.cerrado {
-      background: #E7F6ED;
-      color: var(--exito);
-    }
-
-    .link-doc {
-      color: var(--verde);
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    .contact-card {
-      margin-top: 28px;
-      background: #F8FAF9;
-      border: 1px solid var(--borde);
-      border-radius: 14px;
-      padding: 18px;
-    }
-
-    .logout {
-      width: auto;
-      margin-top: 0;
-      padding: 10px 16px;
-      background: var(--azul);
-    }
-
-    footer {
-      text-align: center;
-      font-size: 12px;
-      color: var(--gris-texto);
-      margin: 40px 0 20px;
-      padding: 0 20px;
-    }
-
-    @media (max-width: 800px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .topbar {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .logout {
-        width: 100%;
-      }
-    }
-  </style>
+  <!-- Favicon SVG inline (no requiere archivo externo) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23005600'/><text y='22' x='5' font-size='18' font-weight='900' fill='white' font-family='Arial'>EA</text></svg>" />
 </head>
 
 <body>
 
-  <header>
-    <div class="header-container">
-      <div class="brand">Ejecutiva Ambiental</div>
-      <div class="subtitle">Portal de Cliente | Seguimiento de servicios y documentos</div>
+  <!-- ═══════════════════════════════════════════════════════
+       HEADER — visible solo cuando hay sesión activa
+       ═══════════════════════════════════════════════════════ -->
+  <header class="site-header" id="siteHeader" aria-label="Cabecera del portal">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="brand-icon" aria-hidden="true">EA</div>
+        <div>
+          <div class="brand-name">Ejecutiva Ambiental</div>
+          <div class="brand-tagline">Portal de Cliente</div>
+        </div>
+      </div>
+
+      <div class="header-user" id="headerUserArea">
+        <div class="header-user-name">
+          <div id="headerUserName">—</div>
+          <div id="headerUserRole" class="header-user-role">—</div>
+        </div>
+        <button class="btn-logout" id="logoutBtn" type="button" aria-label="Cerrar sesión">
+          <!-- Ícono de salida -->
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+               stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Salir
+        </button>
+      </div>
     </div>
   </header>
 
-  <main>
+  <!-- ═══════════════════════════════════════════════════════
+       SECCIÓN: LOGIN
+       FRONTEND: Muestra el formulario y valida el formato.
+       BACKEND:  Debe autenticar, devolver token seguro y
+                 rechazar después de N intentos fallidos.
+       ═══════════════════════════════════════════════════════ -->
+  <section id="loginSection" aria-label="Inicio de sesión">
+    <div class="login-wrapper">
+      <div class="login-card" role="main">
 
-    <!-- LOGIN TEMPORAL SOLO PARA DESARROLLO -->
-    <!-- IMPORTANTE: Este login no es seguro para producción. 
-         Claude deberá conectarlo después a un backend seguro. -->
-
-    <section class="login-card" id="loginSection">
-      <h1>Acceso a clientes</h1>
-      <p>Consulta el estado de tus servicios, documentos disponibles y datos de atención.</p>
-
-      <form id="loginForm">
-        <label for="email">Correo autorizado</label>
-        <input type="email" id="email" placeholder="cliente@empresa.com" required />
-
-        <label for="password">Contraseña o código de acceso</label>
-        <input type="password" id="password" placeholder="Ingresa tu acceso" required />
-
-        <button type="submit">Ingresar al portal</button>
-      </form>
-
-      <div class="notice">
-        Acceso exclusivo para clientes autorizados. La información mostrada debe validarse desde un backend seguro.
-      </div>
-    </section>
-
-    <!-- DASHBOARD DE CLIENTE -->
-
-    <section class="dashboard" id="dashboardSection">
-      <div class="topbar">
-        <div>
-          <h1>Panel del cliente</h1>
-          <p>Resumen general de servicios activos y documentos disponibles.</p>
-        </div>
-        <button class="logout" onclick="logout()">Cerrar sesión</button>
-      </div>
-
-      <div class="client-info">
-        <h2>Cliente: Empresa Demo S.A. de C.V.</h2>
-        <p>
-          Este portal permite visualizar el avance de servicios contratados con Ejecutiva Ambiental.
-          La información real deberá cargarse desde una base de datos segura.
-        </p>
-      </div>
-
-      <div class="grid">
-        <div class="metric">
-          <strong>3</strong>
-          <p>Servicios activos</p>
+        <div class="login-logo" aria-hidden="true">
+          <div class="login-logo-icon">EA</div>
+          <div class="login-logo-text">
+            <strong>Ejecutiva Ambiental</strong>
+            <span>Portal seguro de cliente</span>
+          </div>
         </div>
 
-        <div class="metric">
-          <strong>2</strong>
-          <p>Documentos disponibles</p>
+        <h1>Acceso al portal</h1>
+        <p>Consulta el estado de tus servicios, documentos autorizados y fechas de atención.</p>
+
+        <form id="loginForm" novalidate aria-label="Formulario de acceso">
+          <div class="form-group">
+            <label for="email">Correo electrónico autorizado</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="cliente@empresa.com"
+              autocomplete="email"
+              required
+              aria-required="true"
+              aria-describedby="emailError"
+            />
+            <div class="field-error" id="emailError" role="alert" aria-live="polite"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Contraseña de acceso</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+              aria-required="true"
+              aria-describedby="passwordError"
+            />
+            <div class="field-error" id="passwordError" role="alert" aria-live="polite"></div>
+          </div>
+
+          <button class="btn btn-primary" type="submit" id="loginBtn">
+            Ingresar al portal
+          </button>
+
+          <div class="alert alert-error" id="loginAlert" role="alert" aria-live="assertive"></div>
+        </form>
+
+        <!--
+          ⚠️ AVISO DE DESARROLLO — eliminar en producción o cuando el backend esté listo
+        -->
+        <div class="dev-notice" role="note" aria-label="Nota de desarrollo">
+          <strong>MODO DEMO — Solo para desarrollo</strong>
+          Usa <code>demo@empresa.com</code> / <code>demo2026</code> para probar.<br />
+          En producción, las credenciales se validan en el backend seguro.
         </div>
 
-        <div class="metric">
-          <strong>1</strong>
-          <p>Servicio en revisión</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECCIÓN: DASHBOARD
+       Visible solo después de autenticación exitosa.
+       ═══════════════════════════════════════════════════════ -->
+  <section id="dashboardSection" class="hidden" role="main" aria-label="Panel de cliente">
+    <div class="site-main">
+
+      <!-- Tarjeta de cliente -->
+      <div class="client-card" aria-label="Información del cliente">
+        <div class="client-avatar" id="clientAvatar" aria-hidden="true">EA</div>
+        <div class="client-details">
+          <h2 id="clientName">—</h2>
+          <div id="clientRoleBadge" class="client-role-badge role-cliente" aria-label="Rol del usuario">Cliente</div>
+          <div class="client-meta">
+            <span class="client-meta-item" id="clientCompany">—</span>
+            <span class="client-meta-item" id="clientRfc"></span>
+            <span class="client-meta-item" id="clientPhone"></span>
+          </div>
         </div>
       </div>
 
-      <h2>Servicios y órdenes</h2>
-      <p>Consulta el estado general de los servicios solicitados.</p>
+      <!-- ── NAVEGACIÓN POR PESTAÑAS ── -->
+      <nav class="dashboard-nav" role="tablist" aria-label="Navegación del panel">
+        <button class="nav-tab active" role="tab" data-tab="resumen"
+                aria-selected="true" aria-controls="panelResumen" id="tabResumen">
+          Resumen
+        </button>
+        <button class="nav-tab" role="tab" data-tab="servicios"
+                aria-selected="false" aria-controls="panelServicios" id="tabServicios">
+          Servicios y órdenes
+          <span class="tab-badge" id="badgeServicios" aria-label="cantidad de órdenes">0</span>
+        </button>
+        <button class="nav-tab" role="tab" data-tab="documentos"
+                aria-selected="false" aria-controls="panelDocumentos" id="tabDocumentos">
+          Documentos
+          <span class="tab-badge" id="badgeDocumentos" aria-label="documentos disponibles">0</span>
+        </button>
+        <button class="nav-tab" role="tab" data-tab="contacto"
+                aria-selected="false" aria-controls="panelContacto" id="tabContacto">
+          Contacto
+        </button>
+      </nav>
 
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Orden</th>
-              <th>Servicio</th>
-              <th>Fecha programada</th>
-              <th>Estado</th>
-              <th>Documento</th>
-            </tr>
-          </thead>
-          <tbody id="ordersTable">
-            <tr>
-              <td>OT-2026-001</td>
-              <td>NOM-025-STPS - Iluminación</td>
-              <td>15/05/2026</td>
-              <td><span class="status programado">Programado</span></td>
-              <td><a href="#" class="link-doc">No disponible</a></td>
-            </tr>
+      <!-- ══════════════════════════════════════════════════
+           TAB 1: RESUMEN
+           ══════════════════════════════════════════════════ -->
+      <div class="tab-panel active" id="panelResumen" data-panel="resumen"
+           role="tabpanel" aria-labelledby="tabResumen">
 
-            <tr>
-              <td>OT-2026-002</td>
-              <td>NOM-011-STPS - Ruido laboral</td>
-              <td>18/05/2026</td>
-              <td><span class="status revision">En revisión</span></td>
-              <td><a href="#" class="link-doc">Ver preliminar</a></td>
-            </tr>
+        <!-- Métricas -->
+        <div class="metrics-grid" aria-label="Indicadores de servicios">
+          <div class="metric-card">
+            <div class="metric-value" id="metricTotal">—</div>
+            <div class="metric-label">Órdenes de trabajo</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value" id="metricActivos">—</div>
+            <div class="metric-label">Servicios activos</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value" id="metricRevision">—</div>
+            <div class="metric-label">En revisión</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value" id="metricDocs">—</div>
+            <div class="metric-label">Documentos disponibles</div>
+          </div>
+        </div>
 
-            <tr>
-              <td>OT-2026-003</td>
-              <td>NOM-020-STPS - Recipientes sujetos a presión</td>
-              <td>20/05/2026</td>
-              <td><span class="status cerrado">Cerrado</span></td>
-              <td><a href="#" class="link-doc">Ver informe</a></td>
-            </tr>
-          </tbody>
-        </table>
+        <!-- Próximas fechas -->
+        <div class="card" aria-label="Próximas fechas importantes">
+          <div class="card-header">
+            <h2 class="section-title">Próximas fechas importantes</h2>
+          </div>
+          <div class="card-body">
+            <ul class="dates-list" id="datesList" aria-label="Lista de fechas">
+              <li class="loading-state"><div class="spinner"></div> Cargando…</li>
+            </ul>
+          </div>
+        </div>
+
       </div>
 
-      <div class="contact-card">
-        <h2>Atención a clientes</h2>
-        <p>
-          Para dudas sobre programación, facturación, entrega de informes o seguimiento de servicios,
-          comunícate con:
-        </p>
-        <p style="margin-top: 10px;">
-          <strong>Correo:</strong> aclientes@ejecutivambiental.com<br />
-          <strong>WhatsApp:</strong> 222 941 7295
-        </p>
+      <!-- ══════════════════════════════════════════════════
+           TAB 2: SERVICIOS Y ÓRDENES
+           FRONTEND: renderiza datos del API.
+           BACKEND:  filtra órdenes por cliente y devuelve
+                     solo las autorizadas para su rol.
+           ══════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panelServicios" data-panel="servicios"
+           role="tabpanel" aria-labelledby="tabServicios" hidden>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="section-title">Servicios y órdenes de trabajo</h2>
+          </div>
+          <div class="card-body">
+            <div class="table-scroll" role="region" aria-label="Tabla de órdenes">
+              <table aria-label="Órdenes de trabajo">
+                <thead>
+                  <tr>
+                    <th scope="col">Orden</th>
+                    <th scope="col">Servicio</th>
+                    <th scope="col">Área</th>
+                    <th scope="col">Fecha prog.</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Documento</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTableBody">
+                  <tr>
+                    <td colspan="6">
+                      <div class="loading-state"><div class="spinner"></div> Cargando órdenes…</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!--
+          ESTADOS DE SERVICIO
+          El ciclo completo de un servicio en Ejecutiva Ambiental:
+        -->
+        <div class="card mt-6" aria-label="Referencia de estados de servicio">
+          <div class="card-header">
+            <h2 class="section-title">Ciclo de estados de un servicio</h2>
+          </div>
+          <div class="card-body" style="padding: 20px 24px;">
+            <div class="progress-steps" id="stepsReference" role="list"
+                 aria-label="Etapas del servicio: Recibido, Programado, En campo, En revisión, Enviado al cliente, Cerrado">
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      <div class="contact-card">
-        <h2>Mensaje institucional</h2>
-        <p>
-          Ejecutiva Ambiental es una marca creada para permitirle avanzar con tranquilidad.
-        </p>
+      <!-- ══════════════════════════════════════════════════
+           TAB 3: DOCUMENTOS
+           SEGURIDAD:
+           - El frontend solo muestra nombres e IDs opacos.
+           - Las URLs reales las genera el backend bajo demanda.
+           - El backend valida que el usuario tenga permiso.
+           - Las URLs son temporales (expiran en minutos).
+           ══════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panelDocumentos" data-panel="documentos"
+           role="tabpanel" aria-labelledby="tabDocumentos" hidden>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="section-title">Documentos autorizados</h2>
+            <span class="text-muted" style="font-size:0.78rem;">
+              Solo documentos con acceso autorizado para tu cuenta.
+            </span>
+          </div>
+          <div class="card-body">
+            <ul class="doc-list" id="docsListBody" aria-label="Lista de documentos">
+              <li class="loading-state"><div class="spinner"></div> Cargando documentos…</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="dev-notice mt-4" role="note">
+          <strong>MODO DEMO – Documentos</strong>
+          Los botones "Descargar" en este modo muestran un aviso informativo.
+          En producción, el servidor genera URLs firmadas y temporales para cada documento.
+          Nunca se exponen rutas privadas de Google Drive, Firebase Storage o S3 en el frontend.
+        </div>
+
       </div>
-    </section>
 
-  </main>
+      <!-- ══════════════════════════════════════════════════
+           TAB 4: CONTACTO
+           ══════════════════════════════════════════════════ -->
+      <div class="tab-panel" id="panelContacto" data-panel="contacto"
+           role="tabpanel" aria-labelledby="tabContacto" hidden>
 
-  <footer>
-    © 2026 Ejecutiva Ambiental. Portal de cliente en versión inicial.
+        <div class="contact-grid" aria-label="Información de contacto">
+
+          <!-- Correo -->
+          <div class="contact-card" aria-label="Contacto por correo electrónico">
+            <div class="contact-icon contact-icon-email" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                   stroke="#005600" stroke-width="2" stroke-linecap="round"
+                   stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </div>
+            <div class="contact-info">
+              <h3>Correo de atención a clientes</h3>
+              <a class="contact-link"
+                 href="mailto:aclientes@ejecutivambiental.com"
+                 aria-label="Enviar correo a aclientes@ejecutivambiental.com">
+                aclientes@ejecutivambiental.com
+              </a>
+              <p style="margin-top:4px;">Respuesta en horario laboral</p>
+            </div>
+          </div>
+
+          <!-- WhatsApp -->
+          <div class="contact-card" aria-label="Contacto por WhatsApp">
+            <div class="contact-icon contact-icon-wa" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#15803D">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+            </div>
+            <div class="contact-info">
+              <h3>WhatsApp / Teléfono</h3>
+              <a class="contact-link"
+                 href="https://wa.me/522229417295?text=Hola,%20soy%20cliente%20de%20Ejecutiva%20Ambiental%20y%20quisiera%20recibir%20atenci%C3%B3n."
+                 target="_blank" rel="noopener noreferrer"
+                 aria-label="Abrir WhatsApp con Ejecutiva Ambiental">
+                222 941 7295
+              </a>
+              <p style="margin-top:4px;">Lunes a viernes · 9:00 – 18:00 h</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Mensaje institucional -->
+        <div class="institutional-banner" role="complementary" aria-label="Mensaje institucional">
+          <blockquote>
+            "Ejecutiva Ambiental es una marca creada para permitirle avanzar con tranquilidad."
+          </blockquote>
+          <cite>— Ejecutiva Ambiental</cite>
+        </div>
+
+      </div>
+      <!-- / tabs -->
+
+    </div><!-- / site-main -->
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════ -->
+  <footer class="site-footer" role="contentinfo">
+    © 2026 Ejecutiva Ambiental · Todos los derechos reservados ·
+    <a href="mailto:aclientes@ejecutivambiental.com">aclientes@ejecutivambiental.com</a>
   </footer>
 
+  <!-- ═══════════════════════════════════════════════════════
+       SCRIPTS
+       Orden de carga:
+         1. mock-data.js  → datos de prueba (solo desarrollo)
+         2. api.js        → capa de abstracción del backend
+         3. app.js        → lógica de la aplicación
+
+       En producción:
+         - Eliminar mock-data.js del HTML cuando el backend esté listo.
+         - Cambiar API_CONFIG.mode a 'production' en api.js.
+         - Servir archivos con HTTPS y las cabeceras de seguridad del servidor.
+       ═══════════════════════════════════════════════════════ -->
+
+  <!-- ⚠️ SOLO DESARROLLO: eliminar esta línea al conectar el backend real -->
+  <script src="js/mock-data.js"></script>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+
+  <!--
+    Script de inicialización inline mínimo:
+    Renderiza el barra de progreso de referencia al cargar.
+  -->
   <script>
-    /*
-      IMPORTANTE PARA CLAUDE CODE:
-
-      Este archivo es una maqueta inicial.
-      No usar este login en producción.
-
-      Pendientes de seguridad:
-      1. Conectar login a backend seguro.
-      2. No guardar contraseñas en frontend.
-      3. No exponer enlaces privados de Google Drive.
-      4. Validar permisos por cliente desde backend.
-      5. Sanitizar todo dato recibido antes de mostrarlo.
-      6. Usar HTTPS obligatorio.
-      7. Implementar roles: cliente, administrador, solo lectura.
-      8. Reemplazar los datos demo por datos reales desde API.
-    */
-
-    const loginForm = document.getElementById("loginForm");
-    const loginSection = document.getElementById("loginSection");
-    const dashboardSection = document.getElementById("dashboardSection");
-
-    loginForm.addEventListener("submit", function(event) {
-      event.preventDefault();
-
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-
-      // Validación básica temporal.
-      // En producción esto debe realizarse en backend.
-      if (!email || !password) {
-        alert("Ingresa tu correo y código de acceso.");
-        return;
+    document.addEventListener('DOMContentLoaded', function () {
+      // Renderizar barra de referencia de estados (panel Servicios)
+      if (typeof renderProgressBar === 'function') {
+        renderProgressBar('stepsReference', 'cerrado'); // Muestra todos los pasos como referencia
       }
-
-      // Simulación de acceso para desarrollo.
-      loginSection.style.display = "none";
-      dashboardSection.style.display = "block";
     });
-
-    function logout() {
-      dashboardSection.style.display = "none";
-      loginSection.style.display = "block";
-      loginForm.reset();
-    }
   </script>
 
 </body>
