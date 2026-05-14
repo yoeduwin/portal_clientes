@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal de Cliente | Ejecutiva Ambiental</title>
+
+  <style>
+    :root {
+      --verde: #005600;
+      --verde-claro: #007836;
+      --azul: #0B1F33;
+      --gris-fondo: #F4F6F5;
+      --gris-texto: #5F6B66;
+      --blanco: #FFFFFF;
+      --borde: #DDE5E1;
+      --alerta: #C9A227;
+      --exito: #1F8A4C;
+      --revision: #376996;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      background: var(--gris-fondo);
+      color: var(--azul);
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--verde), var(--verde-claro));
+      color: var(--blanco);
+      padding: 28px 20px;
+    }
+
+    .header-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 28px auto;
+      padding: 0 20px;
+    }
+
+    .login-card,
+    .dashboard {
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+
+    .login-card {
+      max-width: 430px;
+      margin: 60px auto;
+      padding: 30px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    p {
+      color: var(--gris-texto);
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    label {
+      display: block;
+      margin-top: 18px;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      border: 1px solid var(--borde);
+      font-size: 15px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--verde);
+    }
+
+    button {
+      margin-top: 22px;
+      width: 100%;
+      background: var(--verde);
+      color: var(--blanco);
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--verde-claro);
+    }
+
+    .notice {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--gris-texto);
+    }
+
+    .dashboard {
+      display: none;
+      padding: 26px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .client-info {
+      background: #F8FAF9;
+      border: 1px solid var(--borde);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 24px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .metric {
+      border: 1px solid var(--borde);
+      border-radius: 14px;
+      padding: 18px;
+      background: var(--blanco);
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 26px;
+      color: var(--verde);
+      margin-bottom: 6px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--borde);
+      border-radius: 14px;
+      margin-top: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--blanco);
+      min-width: 720px;
+    }
+
+    th, td {
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--borde);
+      font-size: 14px;
+    }
+
+    th {
+      background: #F8FAF9;
+      color: var(--azul);
+      font-weight: 700;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status.programado {
+      background: #FFF5D6;
+      color: #8A6A00;
+    }
+
+    .status.revision {
+      background: #E8F1FA;
+      color: var(--revision);
+    }
+
+    .status.cerrado {
+      background: #E7F6ED;
+      color: var(--exito);
+    }
+
+    .link-doc {
+      color: var(--verde);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .contact-card {
+      margin-top: 28px;
+      background: #F8FAF9;
+      border: 1px solid var(--borde);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .logout {
+      width: auto;
+      margin-top: 0;
+      padding: 10px 16px;
+      background: var(--azul);
+    }
+
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--gris-texto);
+      margin: 40px 0 20px;
+      padding: 0 20px;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .logout {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="header-container">
+      <div class="brand">Ejecutiva Ambiental</div>
+      <div class="subtitle">Portal de Cliente | Seguimiento de servicios y documentos</div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- LOGIN TEMPORAL SOLO PARA DESARROLLO -->
+    <!-- IMPORTANTE: Este login no es seguro para producción. 
+         Claude deberá conectarlo después a un backend seguro. -->
+
+    <section class="login-card" id="loginSection">
+      <h1>Acceso a clientes</h1>
+      <p>Consulta el estado de tus servicios, documentos disponibles y datos de atención.</p>
+
+      <form id="loginForm">
+        <label for="email">Correo autorizado</label>
+        <input type="email" id="email" placeholder="cliente@empresa.com" required />
+
+        <label for="password">Contraseña o código de acceso</label>
+        <input type="password" id="password" placeholder="Ingresa tu acceso" required />
+
+        <button type="submit">Ingresar al portal</button>
+      </form>
+
+      <div class="notice">
+        Acceso exclusivo para clientes autorizados. La información mostrada debe validarse desde un backend seguro.
+      </div>
+    </section>
+
+    <!-- DASHBOARD DE CLIENTE -->
+
+    <section class="dashboard" id="dashboardSection">
+      <div class="topbar">
+        <div>
+          <h1>Panel del cliente</h1>
+          <p>Resumen general de servicios activos y documentos disponibles.</p>
+        </div>
+        <button class="logout" onclick="logout()">Cerrar sesión</button>
+      </div>
+
+      <div class="client-info">
+        <h2>Cliente: Empresa Demo S.A. de C.V.</h2>
+        <p>
+          Este portal permite visualizar el avance de servicios contratados con Ejecutiva Ambiental.
+          La información real deberá cargarse desde una base de datos segura.
+        </p>
+      </div>
+
+      <div class="grid">
+        <div class="metric">
+          <strong>3</strong>
+          <p>Servicios activos</p>
+        </div>
+
+        <div class="metric">
+          <strong>2</strong>
+          <p>Documentos disponibles</p>
+        </div>
+
+        <div class="metric">
+          <strong>1</strong>
+          <p>Servicio en revisión</p>
+        </div>
+      </div>
+
+      <h2>Servicios y órdenes</h2>
+      <p>Consulta el estado general de los servicios solicitados.</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Orden</th>
+              <th>Servicio</th>
+              <th>Fecha programada</th>
+              <th>Estado</th>
+              <th>Documento</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTable">
+            <tr>
+              <td>OT-2026-001</td>
+              <td>NOM-025-STPS - Iluminación</td>
+              <td>15/05/2026</td>
+              <td><span class="status programado">Programado</span></td>
+              <td><a href="#" class="link-doc">No disponible</a></td>
+            </tr>
+
+            <tr>
+              <td>OT-2026-002</td>
+              <td>NOM-011-STPS - Ruido laboral</td>
+              <td>18/05/2026</td>
+              <td><span class="status revision">En revisión</span></td>
+              <td><a href="#" class="link-doc">Ver preliminar</a></td>
+            </tr>
+
+            <tr>
+              <td>OT-2026-003</td>
+              <td>NOM-020-STPS - Recipientes sujetos a presión</td>
+              <td>20/05/2026</td>
+              <td><span class="status cerrado">Cerrado</span></td>
+              <td><a href="#" class="link-doc">Ver informe</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="contact-card">
+        <h2>Atención a clientes</h2>
+        <p>
+          Para dudas sobre programación, facturación, entrega de informes o seguimiento de servicios,
+          comunícate con:
+        </p>
+        <p style="margin-top: 10px;">
+          <strong>Correo:</strong> aclientes@ejecutivambiental.com<br />
+          <strong>WhatsApp:</strong> 222 941 7295
+        </p>
+      </div>
+
+      <div class="contact-card">
+        <h2>Mensaje institucional</h2>
+        <p>
+          Ejecutiva Ambiental es una marca creada para permitirle avanzar con tranquilidad.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    © 2026 Ejecutiva Ambiental. Portal de cliente en versión inicial.
+  </footer>
+
+  <script>
+    /*
+      IMPORTANTE PARA CLAUDE CODE:
+
+      Este archivo es una maqueta inicial.
+      No usar este login en producción.
+
+      Pendientes de seguridad:
+      1. Conectar login a backend seguro.
+      2. No guardar contraseñas en frontend.
+      3. No exponer enlaces privados de Google Drive.
+      4. Validar permisos por cliente desde backend.
+      5. Sanitizar todo dato recibido antes de mostrarlo.
+      6. Usar HTTPS obligatorio.
+      7. Implementar roles: cliente, administrador, solo lectura.
+      8. Reemplazar los datos demo por datos reales desde API.
+    */
+
+    const loginForm = document.getElementById("loginForm");
+    const loginSection = document.getElementById("loginSection");
+    const dashboardSection = document.getElementById("dashboardSection");
+
+    loginForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      // Validación básica temporal.
+      // En producción esto debe realizarse en backend.
+      if (!email || !password) {
+        alert("Ingresa tu correo y código de acceso.");
+        return;
+      }
+
+      // Simulación de acceso para desarrollo.
+      loginSection.style.display = "none";
+      dashboardSection.style.display = "block";
+    });
+
+    function logout() {
+      dashboardSection.style.display = "none";
+      loginSection.style.display = "block";
+      loginForm.reset();
+    }
+  </script>
+
+</body>
+</html>
