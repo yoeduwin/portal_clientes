@@ -1,0 +1,65 @@
+# .htaccess | Ejecutiva Ambiental – Portal de Cliente
+# ─────────────────────────────────────────────────────────────────────
+# Colocar en la raíz del portal (misma carpeta que index.html).
+# Este archivo le dice al servidor de Hostgator cómo comportarse:
+# fuerza HTTPS, agrega protecciones de seguridad y protege archivos.
+# ─────────────────────────────────────────────────────────────────────
+
+# ── Redirigir HTTP → HTTPS ────────────────────────────────────────────
+# Si alguien escribe http://tudominio.com, el servidor lo manda
+# automáticamente a https://tudominio.com (con el candado de seguridad).
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ── Cabeceras de seguridad ─────────────────────────────────────────────
+<IfModule mod_headers.c>
+
+  # Impide que tu portal sea incrustado en un iframe de otro sitio.
+  # Previene ataques de "clickjacking" donde alguien crea una trampa visual.
+  Header always set X-Frame-Options "DENY"
+
+  # El navegador no intenta adivinar el tipo de archivo recibido.
+  # Previene que archivos maliciosos se ejecuten como si fueran otro tipo.
+  Header always set X-Content-Type-Options "nosniff"
+
+  # Al hacer clic en un enlace externo, no se revela la URL completa de tu portal.
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Fuerza HTTPS durante 1 año en navegadores que ya visitaron el sitio.
+  # Solo activar si tienes certificado SSL válido en Hostgator.
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+  # Política de Seguridad de Contenido (CSP):
+  # Define exactamente de dónde puede cargar recursos el portal.
+  # Si ves errores en la consola del navegador sobre "blocked by CSP",
+  # es porque algo intenta cargar desde un origen no listado aquí.
+  Header always set Content-Security-Policy "\
+    default-src 'self'; \
+    script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; \
+    style-src 'self' 'unsafe-inline'; \
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co; \
+    img-src 'self' data:; \
+    font-src 'self'; \
+    frame-ancestors 'none'"
+
+  # Elimina la cabecera que revela que el servidor usa Apache.
+  Header unset X-Powered-By
+  Header always unset X-Powered-By
+
+</IfModule>
+
+# ── Proteger archivos sensibles ────────────────────────────────────────
+# Nadie puede descargar estos archivos directamente desde el navegador.
+<FilesMatch "\.(htaccess|env|md|git|gitignore|DS_Store)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# ── Deshabilitar listado de directorios ────────────────────────────────
+# Sin esto, si alguien va a tudominio.com/js/ vería todos tus archivos JS.
+Options -Indexes
+
+# ── Página de error personalizada ──────────────────────────────────────
+# Si alguien va a una URL que no existe, mandarlo al portal principal.
+ErrorDocument 404 /index.html

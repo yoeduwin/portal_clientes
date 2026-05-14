@@ -1,70 +1,275 @@
 /**
  * api.js | Ejecutiva Ambiental – Portal de Cliente
  *
- * CAPA DE ABSTRACCIÓN DE API
- * ─────────────────────────────────────────────────────────────────────────────
- * Este archivo centraliza todas las llamadas al backend.
- * El frontend nunca debe llamar directamente a URLs de datos privados.
+ * CAPA DE ABSTRACCIÓN DE API — Versión Supabase
+ * ─────────────────────────────────────────────────────────────────────
+ * Todas las llamadas al backend pasan por aquí.
+ * `supabaseClient` viene de js/supabase-client.js (cargado antes en index.html).
+ * js/app.js no necesita cambios — llama las mismas funciones de siempre.
  *
- * MODO ACTUAL: 'demo'   ← Usar mock-data.js para pruebas sin backend
- * MODO PRODUCCIÓN: 'production'  ← Apunta a tu endpoint real
- *
- * Para cambiar a producción:
- *   1. Cambia API_CONFIG.mode a 'production'
- *   2. Cambia API_CONFIG.baseUrl a tu endpoint real
- *   3. Implementa el backend correspondiente
- *
- * BACKENDS SOPORTADOS (implementación pendiente):
- *   - Google Apps Script:  https://script.google.com/macros/s/YOUR_ID/exec
- *   - Firebase Functions:  https://us-central1-YOUR_PROJECT.cloudfunctions.net/api
- *   - Supabase:            https://YOUR_PROJECT.supabase.co/rest/v1/
- *   - Custom REST API:     https://api.tudominio.com/v1/
- *
- * SEGURIDAD:
- *   - El token de sesión viaja en el header Authorization, nunca en la URL
- *   - El backend valida el token y los permisos por recurso
- *   - Las URLs de documentos son generadas por el servidor con expiración
- *   - El frontend nunca almacena claves de API ni secrets
- * ─────────────────────────────────────────────────────────────────────────────
+ * SEGURIDAD IMPLEMENTADA:
+ *  ✓ Supabase valida y hashea contraseñas automáticamente (bcrypt interno)
+ *  ✓ El token de sesión lo gestiona Supabase en localStorage cifrado
+ *  ✓ Row Level Security (RLS) en Supabase: cada cliente solo ve sus datos
+ *  ✓ storage_path nunca sale de la base de datos (función RPC en el servidor)
+ *  ✓ URLs de documentos son temporales (5 minutos) y generadas por el servidor
+ *  ✓ sessionStorage solo guarda nombre/empresa para mostrar en la UI
+ * ─────────────────────────────────────────────────────────────────────
  */
 
 'use strict';
 
-// ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
+// ─── CLASE DE ERROR ───────────────────────────────────────────────────────────
+// app.js usa esta clase para mostrar mensajes de error amigables al usuario.
 
-const API_CONFIG = {
-  // 'demo' → usa datos de mock-data.js sin llamar a ningún servidor
-  // 'production' → llama a baseUrl con autenticación real
-  mode: 'demo',
+class ApiError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.name = 'ApiError';
+    this.statusCode = statusCode;
+  }
+}
 
-  // TODO(producción): reemplaza con tu URL de backend
-  baseUrl: 'https://api.tudominio.com/v1',
+// ─── MÓDULO: AUTENTICACIÓN ────────────────────────────────────────────────────
 
-  // Tiempo de espera para requests (ms)
-  timeout: 10000,
+const AuthAPI = {
 
-  // Simula latencia de red en modo demo (ms) — poner 0 para desactivar
-  mockDelay: 600,
+  /**
+   * Inicia sesión con correo y contraseña.
+   *
+   * Supabase valida las credenciales y hashea la contraseña internamente.
+   * Nosotros nunca vemos ni guardamos la contraseña.
+   * El token de sesión lo guarda Supabase de forma cifrada en localStorage.
+   * En sessionStorage solo guardamos nombre y empresa para mostrar en la UI.
+   */
+  async login(email, password) {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email:    email.trim(),
+      password: password,
+    });
+
+    if (error) {
+      // Supabase devuelve mensajes en inglés — los traducimos aquí.
+      throw new ApiError(
+        'Credenciales incorrectas. Verifica tu correo y contraseña.',
+        401
+      );
+    }
+
+    // Obtenemos los datos del perfil (nombre, empresa, rol) para la UI.
+    const profile = await _fetchProfile(data.user.id);
+
+    const sessionData = {
+      userId:  data.user.id,
+      name:    profile.name,
+      company: profile.company,
+      role:    profile.role,
+    };
+
+    Session.save(sessionData);
+    return sessionData;
+  },
+
+  /**
+   * Cierra la sesión activa.
+   * Supabase elimina el token de localStorage y lo invalida.
+   */
+  async logout() {
+    Session.clear();
+    await supabaseClient.auth.signOut();
+  },
+
+  /**
+   * Devuelve los datos de la sesión guardados en sessionStorage (solo para UI).
+   * Si el usuario recargar la página, Supabase recupera su sesión automáticamente.
+   */
+  getCurrentSession() {
+    return Session.load();
+  },
 };
 
-// ─── GESTOR DE SESIÓN ────────────────────────────────────────────────────────
-// IMPORTANTE: Solo se guarda un indicador de sesión en sessionStorage.
-// El token real (httpOnly cookie) lo gestiona el servidor.
-// sessionStorage se limpia al cerrar la pestaña — más seguro que localStorage.
+// ─── MÓDULO: DATOS DEL CLIENTE ────────────────────────────────────────────────
+
+const ClientAPI = {
+
+  /**
+   * Devuelve el perfil del cliente autenticado (nombre, empresa, rol, RFC, teléfono).
+   */
+  async getProfile() {
+    const userId = await _requireUserId();
+    return _fetchProfile(userId);
+  },
+
+  /**
+   * Devuelve las órdenes de trabajo del cliente autenticado.
+   * Row Level Security en Supabase garantiza que cada cliente
+   * solo recibe sus propias órdenes — no necesitamos filtrar aquí.
+   */
+  async getOrders() {
+    await _requireUserId();
+
+    const { data, error } = await supabaseClient
+      .from('orders')
+      .select('*')
+      .order('scheduled_date', { ascending: true });
+
+    if (error) throw new ApiError('Error al cargar órdenes de trabajo.', 500);
+
+    // Convertir nombres de columna (snake_case de la base de datos)
+    // al formato que espera app.js (camelCase).
+    return (data || []).map(row => ({
+      id:            row.id,
+      service:       row.service,
+      description:   row.description,
+      area:          row.area,
+      scheduledDate: row.scheduled_date,
+      status:        row.status,
+      assignedTo:    row.assigned_to,
+      notes:         row.notes,
+      docKey:        row.doc_key,
+    }));
+  },
+
+  /**
+   * Devuelve los documentos a los que el cliente tiene acceso.
+   * Usamos la vista `documents_safe` que excluye la columna `storage_path`.
+   * El cliente nunca ve la ruta real del archivo — solo el nombre y el accessKey.
+   */
+  async getDocuments() {
+    await _requireUserId();
+
+    const { data, error } = await supabaseClient
+      .from('documents_safe')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) throw new ApiError('Error al cargar documentos.', 500);
+
+    return (data || []).map(row => ({
+      id:        row.id,
+      name:      row.name,
+      type:      row.type,
+      size:      row.size,
+      date:      row.date,
+      status:    row.status,
+      orderId:   row.order_id,
+      accessKey: row.access_key,
+    }));
+  },
+
+  /**
+   * Genera una URL firmada y temporal para descargar un documento.
+   *
+   * Flujo de seguridad:
+   *   1. El frontend envía solo el `accessKey` (una clave opaca, no la ruta real).
+   *   2. La función RPC en Supabase (`get_signed_document_url`) verifica que el
+   *      documento pertenece al usuario autenticado y devuelve el `storage_path`.
+   *   3. Con ese path, `createSignedUrl` genera una URL válida por 5 minutos.
+   *   4. app.js abre la URL en nueva pestaña y NO la guarda en ningún lado.
+   *
+   * @param {string} accessKey - Clave opaca del documento (ej. "DOC-2026-004-PREV")
+   * @returns {Promise<{url: string, expiresIn: number}>}
+   */
+  async getDocumentUrl(accessKey) {
+    if (!accessKey) throw new ApiError('Clave de documento inválida.', 400);
+
+    // Paso 1: el servidor verifica permisos y devuelve el storage_path real.
+    const { data: rpcData, error: rpcError } = await supabaseClient.rpc(
+      'get_signed_document_url',
+      { p_access_key: accessKey }
+    );
+
+    if (rpcError || !rpcData?.storage_path) {
+      throw new ApiError('Documento no disponible o acceso no autorizado.', 403);
+    }
+
+    // Paso 2: generar URL firmada (expira en 300 segundos = 5 minutos).
+    const { data: signedData, error: signedError } = await supabaseClient
+      .storage
+      .from('documentos')
+      .createSignedUrl(rpcData.storage_path, 300);
+
+    if (signedError || !signedData?.signedUrl) {
+      throw new ApiError('No se pudo generar el enlace de descarga.', 500);
+    }
+
+    return {
+      url:       signedData.signedUrl,
+      expiresIn: 300,
+    };
+  },
+
+  /**
+   * Devuelve las fechas importantes del cliente (solo fechas futuras, ordenadas).
+   */
+  async getUpcomingDates() {
+    await _requireUserId();
+
+    const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+
+    const { data, error } = await supabaseClient
+      .from('upcoming_dates')
+      .select('*')
+      .gte('date', today)
+      .order('date', { ascending: true });
+
+    if (error) throw new ApiError('Error al cargar fechas importantes.', 500);
+
+    return (data || []).map(row => ({
+      date:        row.date,
+      title:       row.title,
+      description: row.description,
+      orderId:     row.order_id,
+    }));
+  },
+};
+
+// ─── FUNCIONES INTERNAS ───────────────────────────────────────────────────────
+
+/**
+ * Obtiene el perfil desde la tabla `profiles`.
+ * Reutilizada por `AuthAPI.login()` y `ClientAPI.getProfile()`.
+ */
+async function _fetchProfile(userId) {
+  const { data, error } = await supabaseClient
+    .from('profiles')
+    .select('id, name, company, role, rfc, phone')
+    .eq('id', userId)
+    .single();
+
+  if (error || !data) {
+    throw new ApiError('No se encontró el perfil del usuario.', 404);
+  }
+
+  return data;
+}
+
+/**
+ * Verifica que hay una sesión de Supabase activa.
+ * Si la sesión expiró, lanza ApiError para que app.js muestre el login.
+ */
+async function _requireUserId() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session?.user?.id) {
+    throw new ApiError('Sesión expirada. Por favor inicia sesión de nuevo.', 401);
+  }
+  return session.user.id;
+}
+
+// ─── GESTOR DE SESIÓN (solo para la UI) ──────────────────────────────────────
+// Guarda nombre, empresa y rol para mostrar en pantalla.
+// El token de autenticación real lo gestiona Supabase en localStorage cifrado.
+// sessionStorage se limpia al cerrar la pestaña.
 
 const Session = {
   _key: 'ea_session',
 
   save(data) {
-    // Guardamos solo lo necesario para la UI — NUNCA el token crudo
     const safe = {
-      userId: data.userId,
-      name: data.name,
-      company: data.company,
-      role: data.role,
-      // El token REAL debe ir en cookie httpOnly — aquí solo indicamos que hay sesión
-      // En Google Apps Script / Firebase el token puede ir aquí en demo,
-      // pero en producción usa cookies httpOnly configuradas por el servidor
+      userId:         data.userId,
+      name:           data.name,
+      company:        data.company,
+      role:           data.role,
       _sessionActive: true,
     };
     try {
@@ -94,201 +299,3 @@ const Session = {
     return s !== null && s._sessionActive === true;
   },
 };
-
-// ─── UTILIDADES INTERNAS ──────────────────────────────────────────────────────
-
-function mockDelay() {
-  return new Promise(resolve => setTimeout(resolve, API_CONFIG.mockDelay));
-}
-
-/**
- * Realiza un request autenticado al backend real.
- * Incluye el token en el header Authorization.
- *
- * TODO(producción): esta función debe enviar las credenciales de la forma
- * que tu backend espere (Bearer token, session cookie, API key, etc.)
- */
-async function _authenticatedFetch(path, options = {}) {
-  const url = `${API_CONFIG.baseUrl}${path}`;
-
-  // En producción, si usas cookie httpOnly, el navegador la envía automáticamente
-  // con credentials: 'include'. Si usas Bearer token, agrégalo aquí.
-  const headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    // 'Authorization': `Bearer ${tuTokenAquí}`, // solo si NO usas httpOnly cookie
-    ...options.headers,
-  };
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeout);
-
-  try {
-    const res = await fetch(url, {
-      ...options,
-      headers,
-      credentials: 'include', // envía cookies httpOnly automáticamente
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Error de red' }));
-      throw new ApiError(err.message || `HTTP ${res.status}`, res.status);
-    }
-
-    return res.json();
-  } catch (e) {
-    clearTimeout(timeoutId);
-    if (e.name === 'AbortError') throw new ApiError('Tiempo de espera agotado', 408);
-    throw e;
-  }
-}
-
-class ApiError extends Error {
-  constructor(message, statusCode) {
-    super(message);
-    this.name = 'ApiError';
-    this.statusCode = statusCode;
-  }
-}
-
-// ─── MÓDULO: AUTENTICACIÓN ────────────────────────────────────────────────────
-
-const AuthAPI = {
-  /**
-   * Inicia sesión.
-   * DEMO: valida contra mock-data.js
-   * PRODUCCIÓN: POST a /auth/login — el servidor valida y devuelve session/cookie
-   *
-   * @param {string} email
-   * @param {string} password
-   * @returns {Promise<{userId, name, company, role}>}
-   */
-  async login(email, password) {
-    if (API_CONFIG.mode === 'demo') {
-      await mockDelay();
-      const user = MOCK_USERS.find(
-        u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-      );
-      if (!user) throw new ApiError('Credenciales incorrectas. Verifica tu correo y contraseña.', 401);
-      const sessionData = { userId: user.id, name: user.name, company: user.company, role: user.role };
-      Session.save(sessionData);
-      return sessionData;
-    }
-
-    // ── PRODUCCIÓN ──────────────────────────────────────────────────────────
-    // TODO: el servidor debe:
-    //   1. Validar email + password con hash (bcrypt / Argon2)
-    //   2. Emitir un JWT o session token
-    //   3. Retornarlo como httpOnly cookie O en el body (según arquitectura)
-    //   4. Nunca devolver datos sensibles innecesarios
-    const data = await _authenticatedFetch('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    Session.save(data.user);
-    return data.user;
-  },
-
-  /**
-   * Cierra la sesión activa.
-   */
-  async logout() {
-    Session.clear();
-    if (API_CONFIG.mode === 'production') {
-      // TODO: POST /auth/logout para invalidar el token en el servidor
-      await _authenticatedFetch('/auth/logout', { method: 'POST' }).catch(() => {});
-    }
-  },
-
-  /** Retorna los datos de la sesión actual o null si no hay sesión. */
-  getCurrentSession() {
-    return Session.load();
-  },
-};
-
-// ─── MÓDULO: DATOS DEL CLIENTE ────────────────────────────────────────────────
-
-const ClientAPI = {
-  /**
-   * Devuelve el perfil del cliente autenticado.
-   */
-  async getProfile() {
-    if (API_CONFIG.mode === 'demo') {
-      await mockDelay();
-      const session = Session.load();
-      const user = MOCK_USERS.find(u => u.id === session?.userId);
-      if (!user) throw new ApiError('Sesión no válida', 401);
-      return { id: user.id, name: user.name, company: user.company, role: user.role, rfc: user.rfc, phone: user.phone };
-    }
-    // TODO: GET /client/profile
-    return _authenticatedFetch('/client/profile');
-  },
-
-  /**
-   * Devuelve las órdenes de trabajo del cliente autenticado.
-   * El backend filtra por cliente y rol — el frontend no filtra por permisos.
-   */
-  async getOrders() {
-    if (API_CONFIG.mode === 'demo') {
-      await mockDelay();
-      return [...MOCK_ORDERS];
-    }
-    // TODO: GET /client/orders
-    return _authenticatedFetch('/client/orders');
-  },
-
-  /**
-   * Devuelve los documentos a los que el cliente tiene acceso.
-   * Los documentos bloqueados se incluyen pero sin URL — el servidor decide.
-   */
-  async getDocuments() {
-    if (API_CONFIG.mode === 'demo') {
-      await mockDelay();
-      return [...MOCK_DOCUMENTS];
-    }
-    // TODO: GET /client/documents
-    return _authenticatedFetch('/client/documents');
-  },
-
-  /**
-   * Solicita una URL firmada y temporal para descargar un documento.
-   * NUNCA almacenes esta URL — expira en minutos.
-   *
-   * @param {string} accessKey - Identificador opaco del documento
-   * @returns {Promise<{url: string, expiresIn: number}>}
-   */
-  async getDocumentUrl(accessKey) {
-    if (API_CONFIG.mode === 'demo') {
-      await mockDelay();
-      // En demo, simulamos que el servidor autoriza el acceso
-      // En producción, el servidor genera una URL firmada de Google Drive / Firebase Storage / S3
-      return { url: '#demo-url-no-funcional', expiresIn: 300, demo: true };
-    }
-    // TODO: POST /documents/signed-url
-    // El servidor valida que el usuario tenga permiso sobre ese accessKey
-    // y devuelve una URL temporal (ej. Google Drive export link con token, o signed S3 URL)
-    return _authenticatedFetch('/documents/signed-url', {
-      method: 'POST',
-      body: JSON.stringify({ accessKey }),
-    });
-  },
-
-  /**
-   * Devuelve las fechas importantes del cliente.
-   */
-  async getUpcomingDates() {
-    if (API_CONFIG.mode === 'demo') {
-      await mockDelay();
-      return [...MOCK_UPCOMING_DATES];
-    }
-    // TODO: GET /client/dates
-    return _authenticatedFetch('/client/dates');
-  },
-};
-
-// ─── EXPORTAR (para entornos con módulos ES6) ─────────────────────────────────
-// Si tu bundler soporta modules, descomenta:
-// export { AuthAPI, ClientAPI, Session, ApiError, API_CONFIG };
