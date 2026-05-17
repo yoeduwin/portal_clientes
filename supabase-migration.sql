@@ -217,41 +217,30 @@ COMMENT ON FUNCTION public.get_signed_document_url IS
 
 
 -- ═══════════════════════════════════════════════════════════════════════
---  TRIGGER: crear perfil automáticamente
+--  CÓMO AGREGAR UN CLIENTE NUEVO (hacer esto por cada cliente)
 --
---  Cuando creas un usuario en Authentication → Users → Add User,
---  este trigger inserta automáticamente una fila vacía en la tabla profiles.
---  Tú solo tienes que editar esa fila en Table Editor para poner el nombre,
---  empresa y rol del cliente. No necesitas hacerlo manualmente dos veces.
+--  NOTA: Supabase no permite crear triggers en auth.users desde el editor
+--  SQL normal (error 42501). Por eso el perfil se crea manualmente así:
+--
+--  PASO 1: Ve a Authentication → Users → Add User
+--          Escribe el correo y contraseña del cliente → Create User
+--          Copia el UUID que aparece en la columna "UID" (algo así:
+--          3a7f2c91-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+--
+--  PASO 2: En el SQL Editor de Supabase ejecuta este INSERT
+--          (una vez por cada cliente que agregues):
+--
+--  INSERT INTO public.profiles (id, name, company, role, rfc, phone)
+--  VALUES (
+--    'PEGA-EL-UUID-DEL-CLIENTE-AQUI',   -- ← el UUID del paso 1
+--    'Nombre Completo del Cliente',
+--    'Empresa S.A. de C.V.',
+--    'cliente',                          -- o 'administrador' o 'solo_lectura'
+--    'RFC123456XXX',                     -- opcional, deja '' si no aplica
+--    '222 555 0100'                      -- opcional, deja '' si no aplica
+--  );
+--
 -- ═══════════════════════════════════════════════════════════════════════
-
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  INSERT INTO public.profiles (id, name, company, role)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'name',    ''),
-    COALESCE(NEW.raw_user_meta_data->>'company', ''),
-    'cliente'
-  )
-  ON CONFLICT (id) DO NOTHING;
-  RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
-COMMENT ON TRIGGER on_auth_user_created ON auth.users IS
-  'Crea automáticamente una fila en profiles cuando se crea un usuario';
 
 
 -- ═══════════════════════════════════════════════════════════════════════
@@ -297,9 +286,9 @@ CREATE POLICY "Solo servicio sube archivos"
 --  PRÓXIMOS PASOS:
 --  1. Ve a Authentication → Users → Add User
 --     Crea el correo y contraseña de tu primer cliente.
---  2. Ve a Table Editor → profiles
---     Busca la fila del cliente recién creado y edita:
---     name, company, role (deja 'cliente'), rfc (opcional), phone (opcional)
+--     Copia el UUID que aparece en la columna "UID".
+--  2. En SQL Editor ejecuta el INSERT de perfil de arriba,
+--     pegando el UUID y los datos del cliente.
 --  3. Ve a Table Editor → orders
 --     Agrega las órdenes de trabajo del cliente.
 --     En client_id pon el UUID del cliente (lo ves en Authentication → Users)
